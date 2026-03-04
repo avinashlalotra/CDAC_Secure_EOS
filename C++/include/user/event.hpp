@@ -2,10 +2,13 @@
 #define EVENT_HPP
 
 #include "shared_types.h"
+#include <atomic>
 #include <bpf/libbpf.h>
 #include <condition_variable>
 #include <mutex>
 #include <queue>
+#include <string>
+#include <unordered_map>
 
 class Events {
 public:

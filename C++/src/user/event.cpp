@@ -1,39 +1,12 @@
 #include "event.hpp"
+#include "types.hpp"
 #include <bpf/libbpf.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
+#include <cstdio>
+#include <cstring>
 
-// push data to queue
-int callback(void *ctx, void *data, size_t size) {
-
-  EVENT *event = (EVENT *)data;
-  Events *events = (Events *)ctx;
-
-  {
-    std::lock_guard<std::mutex> lock(events->queue_mutex);
-    events->event_queue.push(*event);
-  }
-
-  events->queue_cv.notify_one();
-
-  return 0;
-}
-
-void print_event(EVENT *event) {
-
-  printf(
-      "Event: giduid=%llu, change_type=%u, bytes_written=%u, file_size=%lld, "
-      "inode=%llu, dev=%llu, filepath=%s, before_size=%lld\n",
-      (unsigned long long)event->giduid,
-      (unsigned int)event->dentry_ctx.change_type,
-      (unsigned int)event->bytes_written, (long long)event->file_size,
-      (unsigned long long)event->dentry_ctx.inode,
-      (unsigned long long)event->dentry_ctx.dev,
-      (const char *)event->dentry_ctx.filepath,
-      (long long)event->dentry_ctx.before_size);
-}
+int callback(void *ctx, void *data, size_t size);
+void print_event(EVENT *event);
+Packet process_event(EVENT *event);
 
 Events::Events(const struct bpf_map *map) {
 
@@ -89,4 +62,34 @@ void Events::consumer() {
 void Events::stop() {
   stop_flag = true;
   queue_cv.notify_all(); // wake consumer
+}
+
+// push data to queue
+int callback(void *ctx, void *data, size_t size) {
+
+  EVENT *event = (EVENT *)data;
+  Events *events = (Events *)ctx;
+
+  {
+    std::lock_guard<std::mutex> lock(events->queue_mutex);
+    events->event_queue.push(*event);
+  }
+
+  events->queue_cv.notify_one();
+
+  return 0;
+}
+
+void print_event(EVENT *event) {
+
+  printf(
+      "Event: giduid=%llu, change_type=%u, bytes_written=%u, file_size=%lld, "
+      "inode=%llu, dev=%llu, filepath=%s, before_size=%lld\n",
+      (unsigned long long)event->giduid,
+      (unsigned int)event->dentry_ctx.change_type,
+      (unsigned int)event->bytes_written, (long long)event->file_size,
+      (unsigned long long)event->dentry_ctx.inode,
+      (unsigned long long)event->dentry_ctx.dev,
+      (const char *)event->dentry_ctx.filepath,
+      (long long)event->dentry_ctx.before_size);
 }
