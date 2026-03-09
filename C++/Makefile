@@ -23,4 +23,9 @@ clean:
 	cd src/user && $(MAKE) clean && cd ../..
 
 
+
+debug:
+	cd scripts && ./debug.sh && cd ..
+
+
 .PHONY: all
