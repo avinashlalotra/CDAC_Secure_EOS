@@ -7,3 +7,4 @@ src/user/*.o
 src/bpf/*_bpf
 tmp
 scripts/*.out
+buil*
